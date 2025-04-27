@@ -17,11 +17,15 @@
 
 ## 常见问题
 
- **Q:** 为什么不支持 **Repentance+**
- **A:** 因为**IsaacSocket**的DLL不支持**Repentance+**
+ **Q:** 为什么不支持 **Repentance+** <br>
+ **A:** 因为**IsaacSocket**还未支持**Repentance+**
 
 
 ## 版本日志
+25/4/27 V0.2
+```
+新增使用卡牌/主动/死亡强度
+```
  25/4/25 V0.1
 ```
 实现受伤加强度

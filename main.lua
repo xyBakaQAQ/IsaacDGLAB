@@ -2,9 +2,16 @@ local mod = RegisterMod("DGLAB", 1)
 
 -- === 配置项 ===
 local coyote_controller_url = "http://127.0.0.1:8920/"
-local coyote_target_client_id = "all" -- 本地用all即可
-local strength_add_on_hurt = 3        -- 受伤时临时增加的强度值
-local strength_add_duration = 90      -- 增强持续帧数（3秒=90帧，1秒=30帧）
+local coyote_target_client_id = "all"
+-- === 伤害项 ===
+local strength_add_on_hurt = 3 -- 受伤强度
+local strength_add_duration = 90 -- 受伤时间
+local strength_add_on_card = 2 -- 卡牌强度
+local strength_add_card_duration = 60 -- 卡牌时间
+local strength_add_on_item = 2 -- 主动强度
+local strength_add_item_duration = 60-- 主动时间
+local strength_add_on_death = 10 -- 死亡强度
+local strength_add_death_duration = 120 -- 死亡时间
 
 -- === 状态变量 ===
 local current_strength = 0
@@ -63,20 +70,47 @@ mod:AddCallback(ModCallbacks.MC_ENTITY_TAKE_DMG, function(_, entity, amount, fla
             if strength_timer == 0 then
                 addStrengthTemporarily(strength_add_on_hurt, strength_add_duration)
             else
-                -- 受伤期间再次受伤，刷新时间
                 strength_timer = strength_add_duration
             end
         end
     end
 end)
 
--- === 渲染回调：右上角显示当前强度 ===
+-- === 卡牌回调 ===
+mod:AddCallback(ModCallbacks.MC_USE_CARD, function(_, card, player, useFlags)
+    if player:GetPlayerType() == PlayerType.PLAYER_ISAAC then
+        if strength_timer == 0 then
+            addStrengthTemporarily(strength_add_on_card, strength_add_card_duration)
+        else
+            strength_timer = strength_add_card_duration
+        end
+    end
+end)
+
+-- === 主动回调 ===
+mod:AddCallback(ModCallbacks.MC_USE_ITEM, function(_, item, rng, player, useFlags, activeSlot, varData)
+    if player:GetPlayerType() == PlayerType.PLAYER_ISAAC then
+        if strength_timer == 0 then
+            addStrengthTemporarily(strength_add_on_item, strength_add_item_duration)
+        else
+            strength_timer = strength_add_item_duration
+        end
+    end
+end)
+
+-- === 游戏结算回调（死亡） ===
+mod:AddCallback(ModCallbacks.MC_POST_GAME_END, function(isGameOver)
+    if isGameOver then
+        addStrengthTemporarily(strength_add_on_death, strength_add_death_duration)
+    end
+end)
+
+-- === 渲染回调===
 mod:AddCallback(ModCallbacks.MC_POST_RENDER, function()
     local text = "Strength: " .. tostring(current_strength)
-    local x = 330 -- 右上角坐标，视分辨率可调整
+    local x = 330
     local y = 15
     Isaac.RenderText(text, x, y, 1, 1, 0, 255)
-    -- 倒计时处理
     if strength_timer > 0 then
         strength_timer = strength_timer - 1
         if strength_timer == 0 then
@@ -92,7 +126,7 @@ mod:AddCallback(ModCallbacks.MC_POST_GAME_STARTED, function()
     strength_timer = 0
 end)
 
--- === 每30帧同步一次强度（防止丢包等异常）===
+-- === 每30帧同步一次强度 ===
 mod:AddCallback(ModCallbacks.MC_POST_UPDATE, function()
     if Game():GetFrameCount() % 30 == 0 and strength_timer == 0 then
         updateStrengthFromServer()
