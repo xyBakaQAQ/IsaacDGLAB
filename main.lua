@@ -3,15 +3,18 @@ local mod = RegisterMod("DGLAB", 1)
 -- === 配置项 ===
 local coyote_controller_url = "http://127.0.0.1:8920/"
 local coyote_target_client_id = "all"
+
 -- === 伤害项 ===
 local strength_add_on_hurt = 3 -- 受伤强度
 local strength_add_duration = 90 -- 受伤时间
 local strength_add_on_card = 2 -- 卡牌强度
 local strength_add_card_duration = 60 -- 卡牌时间
 local strength_add_on_item = 2 -- 主动强度
-local strength_add_item_duration = 60-- 主动时间
-local strength_add_on_death = 10 -- 死亡强度
-local strength_add_death_duration = 120 -- 死亡时间
+local strength_add_item_duration = 60 -- 主动时间
+
+-- === 一键开火配置 ===
+local fire_add_on_death = 20           -- 一键开火强度
+local fire_time_on_death = 3000        -- 一键开火时间(ms)
 
 -- === 状态变量 ===
 local current_strength = 0
@@ -21,6 +24,10 @@ local temp_strength_added = 0
 -- === 工具函数 ===
 local function getStrengthUrl()
     return coyote_controller_url .. "api/v2/game/" .. coyote_target_client_id .. "/strength"
+end
+
+local function getFireUrl()
+    return coyote_controller_url .. "api/v2/game/" .. coyote_target_client_id .. "/action/fire"
 end
 
 local function updateStrengthFromServer()
@@ -36,7 +43,6 @@ local function updateStrengthFromServer()
 end
 
 local function addStrengthTemporarily(addValue, durationFrames)
-    -- 临时加strength
     local headers = { ["Content-Type"] = "application/json" }
     local body = require("json").encode({ strength = { add = addValue } })
     IsaacSocket.HttpClient.PostAsync(getStrengthUrl(), headers, body).Then(function(task)
@@ -50,7 +56,6 @@ end
 
 local function revertStrength()
     if temp_strength_added ~= 0 then
-        -- 减去之前加的数
         local headers = { ["Content-Type"] = "application/json" }
         local body = require("json").encode({ strength = { sub = temp_strength_added } })
         IsaacSocket.HttpClient.PostAsync(getStrengthUrl(), headers, body).Then(function(task)
@@ -60,6 +65,19 @@ local function revertStrength()
             end
         end)
     end
+end
+
+-- === 一键开火 ===
+local function triggerFire(strength, time)
+    local headers = { ["Content-Type"] = "application/json" }
+    local body = require("json").encode({
+        strength = strength,
+        time = time
+    })
+    IsaacSocket.HttpClient.PostAsync(getFireUrl(), headers, body).Then(function(task)
+        if task.IsCompletedSuccessfully() then
+        end
+    end)
 end
 
 -- === 受伤回调 ===
@@ -101,7 +119,7 @@ end)
 -- === 游戏结算回调（死亡） ===
 mod:AddCallback(ModCallbacks.MC_POST_GAME_END, function(isGameOver)
     if isGameOver then
-        addStrengthTemporarily(strength_add_on_death, strength_add_death_duration)
+        triggerFire(fire_add_on_death, fire_time_on_death)
     end
 end)
 
