@@ -78,20 +78,17 @@ end
 
 -- === 回调函数 ===
 local function onPlayerHurt(_, entity, amount, flags, source, countdown)
-    if entity.Type == EntityType.ENTITY_PLAYER then
-        local player = entity:ToPlayer()
-        if player:GetPlayerType() == PlayerType.PLAYER_ISAAC then
-            addStrengthTemporarily(
-                CONFIG.strength.hurt.value, 
-                CONFIG.strength.hurt.duration * 30, 
-                "Hurt"
-            )
-        end
+    if entity and entity:ToPlayer() then  
+        addStrengthTemporarily(
+            CONFIG.strength.hurt.value, 
+            CONFIG.strength.hurt.duration * 30, 
+            "Hurt"
+        )
     end
 end
 
 local function onCardUse(_, card, player, useFlags)
-    if player:GetPlayerType() == PlayerType.PLAYER_ISAAC then
+    if player and player:ToPlayer() then  
         addStrengthTemporarily(
             CONFIG.strength.card.value, 
             CONFIG.strength.card.duration * 30, 
@@ -101,7 +98,7 @@ local function onCardUse(_, card, player, useFlags)
 end
 
 local function onItemUse(_, item, rng, player, useFlags, activeSlot, varData)
-    if player:GetPlayerType() == PlayerType.PLAYER_ISAAC then
+    if player and player:ToPlayer() then  
         addStrengthTemporarily(
             CONFIG.strength.item.value, 
             CONFIG.strength.item.duration * 30, 
@@ -111,7 +108,7 @@ local function onItemUse(_, item, rng, player, useFlags, activeSlot, varData)
 end
 
 local function onPillUse(_, pillEffect, player, useFlags)
-    if player:GetPlayerType() == PlayerType.PLAYER_ISAAC then
+    if player and player:ToPlayer() then  
         addStrengthTemporarily(
             CONFIG.strength.pill.value, 
             CONFIG.strength.pill.duration * 30, 
